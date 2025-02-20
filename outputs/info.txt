@@ -1,0 +1,1 @@
+This directory is automatically filled with benchmark results, with one file per result.

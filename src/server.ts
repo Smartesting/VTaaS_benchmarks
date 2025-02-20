@@ -1,4 +1,4 @@
-import { TestRunStatus } from '@vtaas/models'
+import {TestRunStatus} from '@vtaas/models'
 
 const VTAAS_API_SERVER_URL = process.env.VTAAS_API_SERVER_URL || 'http://localhost:3001'
 
@@ -10,9 +10,7 @@ export function fetchApiJson<T>(url: string, method: 'GET' | 'POST' = 'GET', bod
     }
   }
   if (body) init.body = JSON.stringify(body)
-  const fullUrl = VTAAS_API_SERVER_URL + url
-  console.log(fullUrl)
-  return fetch(fullUrl, init)
+  return fetch(VTAAS_API_SERVER_URL + url, init)
     .then((response) => response.json())
     .catch(console.error)
 }
