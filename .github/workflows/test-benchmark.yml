@@ -43,13 +43,6 @@ jobs:
           name: benchmark-test-outputs
           path: ./outputs/*
 
-      - name: Upload Benchmark Screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-test-screenshots
-          path: ./screenshots/*
-
       - name: Install jq for listing output *.json files
         if: always()
         run: sudo apt-get install jq -y
