@@ -27,7 +27,6 @@ describe('benchmarks', () => {
             const testStatus: TestRunStatus = await benchmark.track('test.duration', () =>
                 waitForTestRunStatus(runId, finalStatus, 1000)
             )
-            benchmark.record('test.duration', 10000 + Math.round(Math.random() * 10000))
             benchmark.record('test.result', testStatus === test.expectedStatus)
             expect(testStatus).toEqual(test.expectedStatus)
         })
