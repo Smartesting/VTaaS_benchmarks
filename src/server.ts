@@ -1,4 +1,4 @@
-import { TestRunStatus } from '@smartesting/vtaas-service'
+import { TestRunStatus } from '@vtaas/models'
 
 const VTAAS_API_SERVER_URL = process.env.VTAAS_API_SERVER_URL || 'http://localhost:3001'
 

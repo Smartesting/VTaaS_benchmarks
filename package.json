@@ -2,17 +2,26 @@
   "name": "@smartesting/vtaas-benchmarks",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": "Smartesting",
   "private": true,
+  "repository": "git@github.com:Smartesting/VTaaS_benchmarks.git",
   "license": "UNLICENSED",
   "scripts": {
+    "tsc:watch": "tsc --noEmit --watch",
     "build": "tsc --noEmit",
-    "test": "echo 'No test'",
-    "prebench": "if [ -z \"$OPENAI_API_KEY\" ]; then echo 'Error: OPENAI_API_KEY is not set' && exit 1; fi",
-    "bench": "jest --config jest.config.ts"
+    "test": "jest"
   },
   "dependencies": {
-    "@smartesting/vtaas-service": "1.0.0",
+    "@teppeis/multimaps": "^3.0.0",
     "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@vtaas/models": "^0.0.9",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "tsc": "^2.0.4",
+    "typescript": "^5.7.3"
   }
 }

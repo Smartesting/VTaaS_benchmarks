@@ -6,7 +6,6 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   testPathIgnorePatterns: ['/node_modules/', 'dist/'],
-  setupFilesAfterEnv: ['./jest.setup.ts'],
   testTimeout: 3600000
 }
 

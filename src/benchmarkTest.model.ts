@@ -1,4 +1,4 @@
-import { Test, TestRunStatus } from '@smartesting/vtaas-service'
+import { Test, TestRunStatus } from '@vtaas/models'
 
 export type BenchmarkTest = Test & {
   name: string
