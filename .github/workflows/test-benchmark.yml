@@ -22,6 +22,8 @@ jobs:
           yarn build
 
       - name: Run Benchmark Tests
+        env:
+          VTAAS_API_SERVER_URL: ${{ vars.VTAAS_API_SERVER_URL }}
         run: |
           yarn test
 
