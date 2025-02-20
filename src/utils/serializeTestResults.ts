@@ -3,7 +3,6 @@ import fs from "node:fs";
 import {Benchmark} from "./benchmark/Benchmark";
 
 const OUTPUT_DIR = path.join(__dirname, '../../outputs')
-console.log(OUTPUT_DIR);
 
 export function serializeTestResults(benchmark: Benchmark) {
     try {

@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import {BenchmarkTest} from './benchmarkTest.model'
 import {TestRunStatus} from '@vtaas/models'
 import {Benchmark} from "./utils/benchmark/Benchmark";
 import {serializeTestResults} from "./utils/serializeTestResults";
+import {fetchApiJson, waitForTestRunStatus} from "./server";
 
 const testsDir = path.join(__dirname, './tests')
 
@@ -21,13 +21,12 @@ describe('benchmarks', () => {
     for (const test of ALL_TESTS) {
         it(test.name, async () => {
             benchmark.record('test.name', test.name)
-            // const runId = await fetchApiJson<string>('/api/testRuns', 'POST', test)
-            //
-            // await waitForTestRunStatus(runId, (status: TestRunStatus) => status !== 'waiting')
-            // const testStatus: TestRunStatus = await benchmark.track('test.duration', () =>
-            //     waitForTestRunStatus(runId, finalStatus, 1000)
-            // )
-            const testStatus = 'success'
+            const runId = await fetchApiJson<string>('/api/testRuns', 'POST', test)
+
+            await waitForTestRunStatus(runId, (status: TestRunStatus) => status !== 'waiting')
+            const testStatus: TestRunStatus = await benchmark.track('test.duration', () =>
+                waitForTestRunStatus(runId, finalStatus, 1000)
+            )
             benchmark.record('test.duration', 10000 + Math.round(Math.random() * 10000))
             benchmark.record('test.result', testStatus === test.expectedStatus)
             expect(testStatus).toEqual(test.expectedStatus)
