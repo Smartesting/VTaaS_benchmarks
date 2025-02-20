@@ -7,10 +7,6 @@ jobs:
   benchmark:
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
-    env:
-      OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
-      LOG_RESPONSE: true
-      SAVE_SCREENSHOT: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,14 +16,13 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies
+      - name: Install and build
         run: |
           yarn install --frozen-lockfile
-          npx -y playwright install --with-deps chromium
+          yarn build
 
       - name: Run Benchmark Tests
         run: |
-          yarn build
           yarn test
 
       - name: Add benchmark result to repository and push

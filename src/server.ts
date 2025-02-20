@@ -10,7 +10,9 @@ export function fetchApiJson<T>(url: string, method: 'GET' | 'POST' = 'GET', bod
     }
   }
   if (body) init.body = JSON.stringify(body)
-  return fetch(VTAAS_API_SERVER_URL + url, init)
+  const fullUrl = VTAAS_API_SERVER_URL + url
+  console.log(fullUrl)
+  return fetch(fullUrl, init)
     .then((response) => response.json())
     .catch(console.error)
 }
