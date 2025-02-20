@@ -9,7 +9,7 @@
   "scripts": {
     "tsc:watch": "tsc --noEmit --watch",
     "build": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest --verbose"
   },
   "dependencies": {
     "@teppeis/multimaps": "^3.0.0",

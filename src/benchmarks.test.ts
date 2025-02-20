@@ -18,8 +18,8 @@ const ALL_TESTS = fs
 describe('benchmarks', () => {
     const benchmark = new Benchmark()
 
-    ALL_TESTS.forEach((test: BenchmarkTest) => {
-        return it(test.name, async () => {
+    for (const test of ALL_TESTS) {
+        it(test.name, async () => {
             benchmark.record('test.name', test.name)
             // const runId = await fetchApiJson<string>('/api/testRuns', 'POST', test)
             //
@@ -32,8 +32,7 @@ describe('benchmarks', () => {
             benchmark.record('test.result', testStatus === test.expectedStatus)
             expect(testStatus).toEqual(test.expectedStatus)
         })
-    })
-
+    }
 
     afterAll(() => {
         serializeTestResults(benchmark)

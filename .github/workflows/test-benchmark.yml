@@ -43,13 +43,6 @@ jobs:
           name: benchmark-test-outputs
           path: ./outputs/*
 
-      - name: Upload Benchmark Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-test-reports
-          path: ./reports/*
-
       - name: Upload Benchmark Screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -58,15 +51,25 @@ jobs:
           path: ./screenshots/*
 
       - name: Install jq for listing output *.json files
+        if: always()
         run: sudo apt-get install jq -y
 
       - name: Create manifest.json file with all outputs *.json files
+        if: always()
         run: |
           cp -r outputs/*.json reports/
           cd reports
           ls *.json | jq -R -s '{files: split("\n")[:-1]}' > manifest.json
 
+      - name: Upload Benchmark Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-test-reports
+          path: ./reports/*
+
       - name: Deploy to GitHub Pages
+        if: always()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
