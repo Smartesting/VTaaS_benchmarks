@@ -30,6 +30,7 @@ jobs:
           yarn test
 
       - name: Add benchmark result to repository and push
+        if: always()
         run: |
           FILENAME="tests_${GITHUB_RUN_NUMBER}.json"
           git config --global user.name "GitHub Actions"
