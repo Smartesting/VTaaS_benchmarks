@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport de Tests</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        svg { margin: 20px auto; display: block; }
+        .bar { fill: steelblue; }
+        .bar.fail { fill: red; }
+    </style>
+</head>
+<body>
+<h1>Benchmark report</h1>
+
+<h2>Test statuses</h2>
+<svg id="histogram" width="800" height="400"></svg>
+
+<h2>Tests durations</h2>
+<div id="charts"></div>
+
+<script>
+    async function loadData() {
+        const response = await fetch('./manifest.json');
+        const manifest = await response.json();
+        const files = manifest.files.map(f => `./${f}`);
+
+        const testData = {};
+        const resultsSummary = {};
+        for (const file of files) {
+            const data = await fetch(file).then(res => res.json());
+            const build = data.build;
+
+            data.tests.forEach(test => {
+                const name = test.name;
+                const duration = test.duration;
+                const result = test.result;
+
+                if (!testData[name]) testData[name] = { builds: [], durations: [] };
+                testData[name].builds.push(build);
+                testData[name].durations.push(duration);
+
+                if (!resultsSummary[build]) resultsSummary[build] = { Pass: 0, Fail: 0 };
+                resultsSummary[build][result]++;
+            });
+        }
+
+        drawCharts(testData);
+        drawHistogram(resultsSummary);
+    }
+
+
+    // 1. Définir le tooltip avant d'utiliser drawHistogram
+    const tooltip = d3.select("body")
+        .append("div")
+        .style("position", "absolute")
+        .style("background", "#fff")
+        .style("border", "1px solid #ccc")
+        .style("padding", "5px")
+        .style("border-radius", "5px")
+        .style("visibility", "hidden")
+        .style("box-shadow", "2px 2px 5px rgba(0,0,0,0.3)")
+        .style("font-size", "14px");
+
+    function drawCharts(testData) {
+        for (const testName in testData) {
+            const data = testData[testName];
+
+            const width = 800, height = 300;
+            const margin = {top: 30, right: 30, bottom: 50, left: 60};
+
+            const svg = d3.select("#charts")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const xScale = d3.scalePoint()
+                .domain(data.builds)
+                .range([margin.left, width - margin.right]);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(data.durations)])
+                .range([height - margin.bottom, margin.top]);
+
+            const xAxis = d3.axisBottom(xScale);
+            const yAxis = d3.axisLeft(yScale)
+                .tickFormat(ms => {
+                    const minutes = Math.floor(ms / 60000);
+                    if (minutes > 0) return `${minutes} min`;
+                    return "0 min";
+                });
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(xAxis)
+                .selectAll("text")
+                .attr("transform", "rotate(-45)")
+                .style("text-anchor", "end");
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(yAxis);
+
+            const line = d3.line()
+                .x((d, i) => xScale(data.builds[i]))
+                .y(d => yScale(d))
+                .curve(d3.curveMonotoneX);
+
+            svg.append("path")
+                .datum(data.durations)
+                .attr("fill", "none")
+                .attr("stroke", "blue")
+                .attr("stroke-width", 2)
+                .attr("d", line);
+
+            // Ajouter le tooltip
+            const tooltip = d3.select("body")
+                .append("div")
+                .style("position", "absolute")
+                .style("background", "#fff")
+                .style("border", "1px solid #ccc")
+                .style("padding", "5px")
+                .style("border-radius", "5px")
+                .style("visibility", "hidden")
+                .style("box-shadow", "2px 2px 5px rgba(0,0,0,0.3)");
+
+            // Ajouter les points avec le tooltip
+            svg.selectAll("circle")
+                .data(data.durations)
+                .enter()
+                .append("circle")
+                .attr("cx", (d, i) => xScale(data.builds[i]))
+                .attr("cy", d => yScale(d))
+                .attr("r", 6)
+                .attr("fill", "blue")
+                .style("cursor", "pointer")
+                .on("mouseover", function (event, d) {
+                    d3.select(this).attr("fill", "orange"); // Changer la couleur au survol
+                    tooltip.style("visibility", "visible")
+                        .text(`Durée: ${formatDuration(d)}`)
+                        .style("top", `${event.pageY - 30}px`)
+                        .style("left", `${event.pageX + 10}px`);
+                })
+                .on("mousemove", function (event) {
+                    tooltip.style("top", `${event.pageY - 30}px`)
+                        .style("left", `${event.pageX + 10}px`);
+                })
+                .on("mouseout", function () {
+                    d3.select(this).attr("fill", "blue"); // Rétablir la couleur
+                    tooltip.style("visibility", "hidden");
+                });
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .text(testName);
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height - 10)
+                .attr("text-anchor", "middle")
+                .text("Builds");
+        }
+    }
+
+    function drawHistogram(testResults) {
+        const width = 800, height = 400;
+        const margin = {top: 30, right: 30, bottom: 50, left: 60};
+
+        const svg = d3.select("#histogram")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const testNames = Object.keys(testResults);
+
+        const xScale = d3.scaleBand()
+            .domain(testNames)
+            .range([margin.left, width - margin.right])
+            .padding(0.4);
+
+        // Calculer un domaine Y plus grand avec une plage adaptée
+        const maxCount = d3.max(testNames, name => testResults[name].Pass + testResults[name].Fail);
+        const yScale = d3.scaleLinear()
+            .domain([0, maxCount])  // Prendre le max de Pass + Fail
+            .range([height - margin.bottom, margin.top])
+            .nice();  // Ajout de nice() pour arrondir la plage
+
+        // Définir l'intervalle des ticks de l'axe Y, ajusté dynamiquement
+        const yAxis = d3.axisLeft(yScale).tickFormat(d3.format("d")).ticks(5); // Ajuster les ticks automatiquement
+
+        // Dessiner l'axe X
+        const xAxis = d3.axisBottom(xScale).tickFormat(d => d.split(" :: ")[0]);
+
+        svg.append("g")
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(xAxis)
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
+
+        svg.append("g")
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(yAxis);
+
+        // Ajouter les barres empilées (Pass en vert, Fail en rouge)
+        svg.selectAll("g.bar")
+            .data(testNames)
+            .enter()
+            .append("g")
+            .attr("transform", d => `translate(${xScale(d)}, 0)`)
+            .each(function(d) {
+                const group = d3.select(this);
+                const passCount = testResults[d].Pass;
+                const failCount = testResults[d].Fail;
+
+                // Barre rouge (Fail)
+                group.append("rect")
+                    .attr("x", 0)
+                    .attr("y", yScale(passCount + failCount))
+                    .attr("width", xScale.bandwidth())
+                    .attr("height", yScale(0) - yScale(failCount))
+                    .attr("fill", "red")
+                    .style("cursor", "pointer")
+                    .on("mouseover", function (event) {
+                        d3.select(this).attr("fill", "darkred");
+                        tooltip.style("visibility", "visible")
+                            .text(`${failCount} Fail`)
+                            .style("top", `${event.pageY - 30}px`)
+                            .style("left", `${event.pageX + 10}px`);
+                    })
+                    .on("mousemove", function (event) {
+                        tooltip.style("top", `${event.pageY - 30}px`)
+                            .style("left", `${event.pageX + 10}px`);
+                    })
+                    .on("mouseout", function () {
+                        d3.select(this).attr("fill", "red");
+                        tooltip.style("visibility", "hidden");
+                    });
+
+                // Barre verte (Pass) AU-DESSUS de la rouge
+                group.append("rect")
+                    .attr("x", 0)
+                    .attr("y", yScale(passCount))
+                    .attr("width", xScale.bandwidth())
+                    .attr("height", yScale(0) - yScale(passCount))
+                    .attr("fill", "green")
+                    .style("cursor", "pointer")
+                    .on("mouseover", function (event) {
+                        d3.select(this).attr("fill", "darkgreen");
+                        tooltip.style("visibility", "visible")
+                            .text(`${passCount} Pass`)
+                            .style("top", `${event.pageY - 30}px`)
+                            .style("left", `${event.pageX + 10}px`);
+                    })
+                    .on("mousemove", function (event) {
+                        tooltip.style("top", `${event.pageY - 30}px`)
+                            .style("left", `${event.pageX + 10}px`);
+                    })
+                    .on("mouseout", function () {
+                        d3.select(this).attr("fill", "green");
+                        tooltip.style("visibility", "hidden");
+                    });
+            });
+
+        // Ajouter un titre
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", 20)
+            .attr("text-anchor", "middle")
+            .text("Test results (Pass/Fail)");
+    }
+
+
+    function formatDuration(ms) {
+        if (ms < 1000) return `${ms} ms`;
+
+        const seconds = Math.floor(ms / 1000) % 60;
+        const minutes = Math.floor(ms / 60000) % 60;
+        const hours = Math.floor(ms / 3600000);
+        const result = [];
+        if (hours > 0) result.push(`${hours} h`);
+        if (minutes > 0) result.push(`${minutes} min`);
+        if (seconds > 0 || result.length === 0) result.push(`${seconds} sec`);
+
+        return result.join(" ");
+    }
+
+
+    loadData();
+</script>
+</body>
+</html>
