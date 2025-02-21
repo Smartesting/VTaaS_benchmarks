@@ -38,9 +38,10 @@
                 const duration = test.duration;
                 const result = test.result;
 
-                if (!testData[name]) testData[name] = { builds: [], durations: [] };
+                if (!testData[name]) testData[name] = { builds: [], durations: [], statuses:[] };
                 testData[name].builds.push(build);
                 testData[name].durations.push(duration);
+                testData[name].statuses.push(test.result);
 
                 if (!resultsSummary[build]) resultsSummary[build] = { Pass: 0, Fail: 0 };
                 resultsSummary[build][result]++;
@@ -51,8 +52,6 @@
         drawHistogram(resultsSummary);
     }
 
-
-    // 1. Définir le tooltip avant d'utiliser drawHistogram
     const tooltip = d3.select("body")
         .append("div")
         .style("position", "absolute")
@@ -89,14 +88,13 @@
                 .tickFormat(ms => {
                     const minutes = Math.floor(ms / 60000);
                     if (minutes > 0) return `${minutes} min`;
-                    return "0 min";
+                    return "0";
                 });
 
             svg.append("g")
                 .attr("transform", `translate(0,${height - margin.bottom})`)
                 .call(xAxis)
                 .selectAll("text")
-                .attr("transform", "rotate(-45)")
                 .style("text-anchor", "end");
 
             svg.append("g")
@@ -111,11 +109,10 @@
             svg.append("path")
                 .datum(data.durations)
                 .attr("fill", "none")
-                .attr("stroke", "blue")
+                .attr("stroke", "darkgray")
                 .attr("stroke-width", 2)
                 .attr("d", line);
 
-            // Ajouter le tooltip
             const tooltip = d3.select("body")
                 .append("div")
                 .style("position", "absolute")
@@ -126,7 +123,6 @@
                 .style("visibility", "hidden")
                 .style("box-shadow", "2px 2px 5px rgba(0,0,0,0.3)");
 
-            // Ajouter les points avec le tooltip
             svg.selectAll("circle")
                 .data(data.durations)
                 .enter()
@@ -134,13 +130,19 @@
                 .attr("cx", (d, i) => xScale(data.builds[i]))
                 .attr("cy", d => yScale(d))
                 .attr("r", 6)
-                .attr("fill", "blue")
+                .attr("fill", (d, i) => data.statuses[i] === "Pass" ? "green" : "red")
                 .style("cursor", "pointer")
+                .each(function (d, i) {
+                    d3.select(this).attr("data-index", i);
+                })
                 .on("mouseover", function (event, d) {
-                    d3.select(this).attr("fill", "orange"); // Changer la couleur au survol
+                    d3.select(this).attr("fill", "orange");
+                    const index = d3.select(this).attr("data-index");
+                    console.log(index)
+                    const statusText = data.statuses[index] === "Pass" ? "✅ Passed" : "❌ Failed";
                     tooltip.style("visibility", "visible")
-                        .text(`Durée: ${formatDuration(d)}`)
-                        .style("top", `${event.pageY - 30}px`)
+                        .html(`${statusText}<br>Duration: ${formatDuration(d)}`)
+                        .style("top", `${event.pageY - 40}px`)
                         .style("left", `${event.pageX + 10}px`);
                 })
                 .on("mousemove", function (event) {
@@ -148,7 +150,8 @@
                         .style("left", `${event.pageX + 10}px`);
                 })
                 .on("mouseout", function () {
-                    d3.select(this).attr("fill", "blue"); // Rétablir la couleur
+                    const index = d3.select(this).attr("data-index");
+                    d3.select(this).attr("fill", data.statuses[index] === "Pass" ? "green" : "red");
                     tooltip.style("visibility", "hidden");
                 });
 
@@ -182,31 +185,25 @@
             .range([margin.left, width - margin.right])
             .padding(0.4);
 
-        // Calculer un domaine Y plus grand avec une plage adaptée
         const maxCount = d3.max(testNames, name => testResults[name].Pass + testResults[name].Fail);
         const yScale = d3.scaleLinear()
-            .domain([0, maxCount])  // Prendre le max de Pass + Fail
+            .domain([0, maxCount])
             .range([height - margin.bottom, margin.top])
-            .nice();  // Ajout de nice() pour arrondir la plage
+            .nice();
 
-        // Définir l'intervalle des ticks de l'axe Y, ajusté dynamiquement
-        const yAxis = d3.axisLeft(yScale).tickFormat(d3.format("d")).ticks(5); // Ajuster les ticks automatiquement
-
-        // Dessiner l'axe X
+        const yAxis = d3.axisLeft(yScale).tickFormat(d3.format("d")).ticks(5);
         const xAxis = d3.axisBottom(xScale).tickFormat(d => d.split(" :: ")[0]);
 
         svg.append("g")
             .attr("transform", `translate(0,${height - margin.bottom})`)
             .call(xAxis)
             .selectAll("text")
-            .attr("transform", "rotate(-45)")
             .style("text-anchor", "end");
 
         svg.append("g")
             .attr("transform", `translate(${margin.left},0)`)
             .call(yAxis);
 
-        // Ajouter les barres empilées (Pass en vert, Fail en rouge)
         svg.selectAll("g.bar")
             .data(testNames)
             .enter()
@@ -217,7 +214,6 @@
                 const passCount = testResults[d].Pass;
                 const failCount = testResults[d].Fail;
 
-                // Barre rouge (Fail)
                 group.append("rect")
                     .attr("x", 0)
                     .attr("y", yScale(passCount + failCount))
@@ -241,7 +237,6 @@
                         tooltip.style("visibility", "hidden");
                     });
 
-                // Barre verte (Pass) AU-DESSUS de la rouge
                 group.append("rect")
                     .attr("x", 0)
                     .attr("y", yScale(passCount))
@@ -266,7 +261,6 @@
                     });
             });
 
-        // Ajouter un titre
         svg.append("text")
             .attr("x", width / 2)
             .attr("y", 20)
