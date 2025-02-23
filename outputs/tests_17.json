@@ -1,0 +1,1 @@
+{"build":"17","tests":[{"name":"TC-1-P :: Perform a keyword search and sort results","duration":146440,"result":"Pass"},{"name":"TC-2-P :: Combine keyword and category filters, then filter by price","duration":180786,"result":"Fail"}]}
