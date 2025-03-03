@@ -9,15 +9,19 @@
   "scripts": {
     "tsc:watch": "tsc --noEmit --watch",
     "build": "tsc --noEmit",
+    "build:reports": "tsc --project tsconfig.reports.json",
+    "build:reports:watch": "tsc --project tsconfig.reports.json --watch",
     "test": "jest --verbose"
   },
   "dependencies": {
     "@teppeis/multimaps": "^3.0.0",
+    "@types/d3": "^7.4.3",
+    "d3": "^7.9.0",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
-    "@vtaas/models": "^0.0.9",
+    "@vtaas/models": "^0.0.14",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",

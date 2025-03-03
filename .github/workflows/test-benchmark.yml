@@ -22,6 +22,7 @@ jobs:
         run: |
           yarn install --frozen-lockfile
           yarn build
+          yarn build:reports
 
       - name: Run Benchmark Tests
         env:

@@ -1,19 +1,13 @@
 import path from "path";
 import fs from "node:fs";
-import {Benchmark} from "./benchmark/Benchmark";
+import {TestRunFullStatus} from "@vtaas/models";
 
 const OUTPUT_DIR = path.join(__dirname, '../../outputs')
 
-export function serializeTestResults(benchmark: Benchmark) {
+export function serializeTestResults(testResults: ReadonlyArray<TestRunFullStatus>) {
     try {
         const build = process.env.GITHUB_RUN_NUMBER || new Date().toISOString()
-        const benchmarkData: any = benchmark.getData()
-        const tests = benchmarkData.test.name.map((name: string, index: number) => {
-            const duration = benchmarkData.test.duration?.[index] ?? 0
-            const result = benchmarkData.test.result?.[index] ? 'Pass' : 'Fail'
-            return {name, duration, result}
-        })
-        const json = {build, tests}
+        const json = {build, tests: testResults}
         writeJsonOutputFile(`tests_${build}.json`, json)
     } catch (e) {
         console.error(e)

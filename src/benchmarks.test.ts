@@ -1,9 +1,10 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import {TestRunStatus} from '@vtaas/models'
-import {Benchmark} from "./utils/benchmark/Benchmark";
+import {RunStatus, TestRunFullStatus} from '@vtaas/models'
 import {serializeTestResults} from "./utils/serializeTestResults";
 import {fetchApiJson, waitForTestRunStatus} from "./server";
+import {BenchmarkTest} from "./benchmarkTest.model";
+import {TestRunReport} from "./utils/types";
 
 const testsDir = path.join(__dirname, './tests')
 
@@ -16,31 +17,31 @@ const ALL_TESTS = fs
     })
 
 describe('benchmarks', () => {
-    const benchmark = new Benchmark()
+    const testResults: Array<TestRunReport> = []
 
     for (const test of ALL_TESTS) {
         it(test.name, async () => {
-            benchmark.record('test.name', test.name)
-            const runId = await fetchApiJson<string>('/api/testRuns', 'POST', test)
-
-            await waitForTestRunStatus(runId, (status: TestRunStatus) => status !== 'waiting')
-            const testStatus: TestRunStatus = await benchmark.track('test.duration', () =>
-                waitForTestRunStatus(runId, finalStatus, 1000)
-            )
-            benchmark.record('test.result', testStatus === test.expectedStatus)
-            expect(testStatus).toEqual(test.expectedStatus)
+            const testStatus = await runTest(test)
+            testResults.push({...testStatus, name:test.name})
+            expect(testStatus.status).toEqual(test.expectedStatus)
         })
     }
 
     afterAll(() => {
-        serializeTestResults(benchmark)
+        serializeTestResults(testResults)
     })
 })
 
-function finalStatus(status: TestRunStatus): boolean {
+async function runTest(test: BenchmarkTest): Promise<TestRunFullStatus> {
+    const runId = await fetchApiJson<string>('/api/testRuns', 'POST', test)
+    return await waitForTestRunStatus(runId, finalStatus)
+}
+
+
+function finalStatus(status: RunStatus): boolean {
     return !pendingStatus(status)
 }
 
-function pendingStatus(status: TestRunStatus): boolean {
+function pendingStatus(status: RunStatus): boolean {
     return status === 'running' || status === 'waiting'
 }

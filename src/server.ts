@@ -1,8 +1,8 @@
-import {TestRunStatus} from '@vtaas/models'
+import {RunStatus, TestRunFullStatus} from '@vtaas/models'
 
 const VTAAS_API_SERVER_URL = process.env.VTAAS_API_SERVER_URL || 'http://localhost:3001'
 
-export function fetchApiJson<T>(url: string, method: 'GET' | 'POST' = 'GET', body?: object): Promise<T> {
+export async function fetchApiJson<T>(url: string, method: 'GET' | 'POST' = 'GET', body?: object): Promise<T> {
   const init: RequestInit = {
     method,
     headers: {
@@ -10,18 +10,20 @@ export function fetchApiJson<T>(url: string, method: 'GET' | 'POST' = 'GET', bod
     }
   }
   if (body) init.body = JSON.stringify(body)
-  return fetch(VTAAS_API_SERVER_URL + url, init)
+  const fullUrl = VTAAS_API_SERVER_URL + url
+  console.log(`Fetching ${fullUrl}`)
+  return fetch(fullUrl, init)
     .then((response) => response.json())
     .catch(console.error)
 }
 
 export async function waitForTestRunStatus(
   runId: string,
-  checkFn: (status: TestRunStatus) => boolean,
+  checkFn: (status: RunStatus) => boolean,
   interval = 300
-): Promise<TestRunStatus> {
-  const result: { testStatus: TestRunStatus } = await fetchApiJson('/api/testRuns/' + runId)
-  if (checkFn(result.testStatus)) return result.testStatus
+): Promise<TestRunFullStatus> {
+  const status = await fetchApiJson<TestRunFullStatus>(`/api/testRuns/${runId}/fullStatus`)
+  if (checkFn(status.status)) return status
   await new Promise((resolve) => setTimeout(resolve, interval))
   return waitForTestRunStatus(runId, checkFn, interval)
 }

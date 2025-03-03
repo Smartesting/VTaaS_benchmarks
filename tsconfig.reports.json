@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node"
+  },
+  "include": ["reports/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
