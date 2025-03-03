@@ -22,19 +22,20 @@ describe('benchmarks', () => {
     for (const test of ALL_TESTS) {
         it(test.name, async () => {
             const testStatus = await runTest(test)
-            testResults.push({...testStatus, name:test.name})
-            expect(testStatus.status).toEqual(test.expectedStatus)
+            if (testStatus) testResults.push({...testStatus, name: test.name})
+            expect(testStatus?.status).toEqual(test.expectedStatus)
         })
     }
 
     afterAll(() => {
-        serializeTestResults(testResults)
+        if (testResults.length > 0) serializeTestResults(testResults)
     })
 })
 
-async function runTest(test: BenchmarkTest): Promise<TestRunFullStatus> {
+async function runTest(test: BenchmarkTest): Promise<TestRunFullStatus | null> {
     const runId = await fetchApiJson<string>('/api/testRuns', 'POST', test)
-    return await waitForTestRunStatus(runId, finalStatus)
+    if (isNaN(Number(runId))) return null
+    return await waitForTestRunStatus(runId, finalStatus, 2000)
 }
 
 
