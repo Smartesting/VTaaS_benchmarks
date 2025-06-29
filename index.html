@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport de Tests</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        svg {
+            margin: 20px auto;
+            display: block;
+        }
+
+        .bar {
+            fill: steelblue;
+        }
+
+        .bar.fail {
+            fill: red;
+        }
+    </style>
+
+    <script type="importmap">
+        {
+          "imports": {
+            "d3": "https://cdn.jsdelivr.net/npm/d3@7/+esm",
+            "./statusColor": "./statusColor.js"
+          }
+        }
+    </script>
+
+    <script src="loadData.js" defer type="module"></script>
+    <script src="drawSummary.js" defer type="module"></script>
+    <script src="drawTestData.js" defer type="module"></script>
+
+</head>
+<body>
+<h1>Benchmark report</h1>
+
+<h2>Test statuses</h2>
+<svg id="summary" width="800" height="400"></svg>
+
+<h2>Tests durations</h2>
+<div id="tests"></div>
+
+
+<script type="module">
+    import {loadData} from './loadData.js';
+    import {drawSummary} from './drawSummary.js';
+    import {drawTestData} from './drawTestData.js';
+
+    async function init() {
+        const {summary, testData} = await loadData();
+        drawSummary(summary, "summary")
+        drawTestData(testData, "tests");
+    }
+    init()
+</script>
+</body>
+</html>
